@@ -46,7 +46,7 @@ class Auth extends CI_Controller
                 'name' => htmlspecialchars($this->input->post('name', true)),
                 'email' => htmlspecialchars($this->input->post('email', true)),
                 'image' => 'default.jpg',
-                'password' => password_hash($this->input->post('password'), PASSWORD_DEFAULT),
+                'password' => password_hash($this->input->post('password1'), PASSWORD_DEFAULT),
                 'role_id' => 2,
                 'is_active' => 1,
                 'date_created' => time()
@@ -62,9 +62,34 @@ class Auth extends CI_Controller
     {
         $email = $this->input->post('email');
         $password = $this->input->post('password');
-        $viewdata = $this->ModelLoginUser->getdata($email);
-
-        var_dump($viewdata);
-        die;
+        $userdata = $this->ModelLoginUser->getdata($email);
+        if ($userdata) {
+            if ($userdata['is_active'] == 1) {
+                //Cek password
+                if (password_verify($password, $userdata['password'])) {
+                    $data = [
+                        'email' => $userdata['email'],
+                        'role_id' => $userdata['role_id']
+                    ];
+                    $this->session->set_userdata($data);
+                    redirect('user');
+                } else {
+                    $this->session->set_flashdata('message', '<div class="alert alert-danger" role="alert">
+                    Password salah
+                  </div>');
+                    redirect('Auth');
+                }
+            } else {
+                $this->session->set_flashdata('message', '<div class="alert alert-danger" role="alert">
+                Email ini belum diaktivasi
+              </div>');
+                redirect('Auth');
+            }
+        } else {
+            $this->session->set_flashdata('message', '<div class="alert alert-danger" role="alert">
+            Email tidak terdaftar
+          </div>');
+            redirect('Auth');
+        }
     }
 }
